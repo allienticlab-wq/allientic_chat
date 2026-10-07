@@ -3,63 +3,271 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Allientic Vault Chat</title>
+  <title>Allientic Vault // Quantum Messenger</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
   <script src="/socket.io/socket.io.js"></script>
   <style>
-    body { background-color: #06080C; color: #DCE5F2; font-family: sans-serif; }
-    .glass { background: rgba(10, 15, 24, 0.85); border: 1px solid rgba(0, 240, 255, 0.2); }
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+    
+    * { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+    
+    body { background-color: #05070B; color: #DCE5F2; }
+    .glass-panel { background: rgba(8, 12, 20, 0.75); backdrop-filter: blur(16px); border: 1px solid rgba(0, 240, 255, 0.12); }
+    .glass-card { background: rgba(13, 19, 32, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
+    .neon-cyan { color: #00F0FF; text-shadow: 0 0 12px rgba(0, 240, 255, 0.4); }
+    .neon-glow-box { box-shadow: 0 0 20px rgba(0, 240, 255, 0.15); }
+    
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(0, 240, 255, 0.2); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(0, 240, 255, 0.4); }
   </style>
 </head>
-<body class="h-screen w-screen flex flex-col justify-between overflow-hidden">
-  <header class="p-4 glass flex justify-between items-center">
-    <div class="flex items-center gap-2">
-      <div class="w-3 h-3 rounded-full bg-cyan-400 animate-pulse"></div>
-      <h1 class="font-bold text-sm tracking-wider text-cyan-400 uppercase">ALLIENTIC VAULT</h1>
+<body class="h-screen w-screen flex overflow-hidden select-none">
+
+  <!-- LEFT NAVIGATION RAIL -->
+  <aside class="hidden md:flex flex-col items-center justify-between w-16 py-6 bg-[#040609] border-r border-[#101725] z-20">
+    <div class="flex flex-col items-center gap-6">
+      <div class="h-10 w-10 rounded-xl bg-gradient-to-tr from-[#00F0FF] to-[#7000FF] flex items-center justify-center shadow-[0_0_15px_rgba(0,240,255,0.4)]">
+        <i data-lucide="shield" class="w-5 h-5 text-black stroke-[2.5]"></i>
+      </div>
+      <div class="h-[1px] w-8 bg-[#151F32]"></div>
+      <button class="p-3 rounded-xl text-[#00F0FF] bg-[#00F0FF]/10 transition-all hover:scale-105">
+        <i data-lucide="message-square" class="w-5 h-5"></i>
+      </button>
+      <button class="p-3 rounded-xl text-gray-500 hover:text-gray-300 hover:bg-gray-800/40 transition-all">
+        <i data-lucide="users" class="w-5 h-5"></i>
+      </button>
+      <button class="p-3 rounded-xl text-gray-500 hover:text-gray-300 hover:bg-gray-800/40 transition-all">
+        <i data-lucide="phone" class="w-5 h-5"></i>
+      </button>
     </div>
-    <div class="text-xs text-emerald-400 font-bold">ONLINE</div>
-  </header>
+    <div class="flex flex-col items-center gap-4">
+      <div class="w-2.5 h-2.5 rounded-full bg-[#00F0FF] animate-pulse" title="Network Connected"></div>
+      <button class="p-3 rounded-xl text-gray-500 hover:text-gray-300">
+        <i data-lucide="settings" class="w-5 h-5"></i>
+      </button>
+    </div>
+  </aside>
 
-  <main id="chat-box" class="flex-1 overflow-y-auto p-4 space-y-3"></main>
+  <!-- SIDEBAR: CHAT DIRECTORY -->
+  <aside class="w-full md:w-80 lg:w-96 flex flex-col bg-[#070A11] border-r border-[#101725] z-10">
+    <!-- Top Identity Card -->
+    <div class="p-4 border-b border-[#101725] flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="relative">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-purple-500/20 border border-cyan-500/30 flex items-center justify-center font-bold text-white text-sm" id="user-avatar">
+            OP
+          </div>
+          <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-[#070A11]"></span>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <input id="user-input" type="text" value="Operative" class="bg-transparent text-sm font-bold text-white border-b border-transparent hover:border-cyan-500/50 focus:border-cyan-500 outline-none w-24">
+            <i data-lucide="edit-3" class="w-3 h-3 text-gray-500"></i>
+          </div>
+          <span class="text-[10px] text-gray-400 font-mono tracking-wider">ALLIENTIC // NODE</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-1">
+        <button class="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-all">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
 
-  <footer class="p-3 glass">
-    <form id="chat-form" class="flex gap-2 max-w-2xl mx-auto">
-      <input id="user-input" type="text" placeholder="Name" value="User" class="w-24 bg-gray-900 border border-gray-700 px-3 py-2 rounded text-xs text-white outline-none">
-      <input id="msg-input" type="text" placeholder="Type message..." autocomplete="off" class="flex-1 bg-gray-900 border border-gray-700 px-4 py-2 rounded text-xs text-white outline-none">
-      <button type="submit" class="bg-cyan-500 hover:bg-cyan-400 text-black font-bold px-4 py-2 rounded text-xs">SEND</button>
-    </form>
-  </footer>
+    <!-- Search Input -->
+    <div class="p-3 border-b border-[#101725]">
+      <div class="relative">
+        <i data-lucide="search" class="w-4 h-4 text-gray-500 absolute left-3 top-2.5"></i>
+        <input type="text" placeholder="Search conversations or ciphers..." class="w-full bg-[#0B0F19] border border-[#162135] rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50">
+      </div>
+    </div>
+
+    <!-- Conversations Feed -->
+    <div class="flex-1 overflow-y-auto divide-y divide-[#0D1424]">
+      <!-- Active Live Room -->
+      <div class="p-4 flex gap-3 cursor-pointer bg-[#0D1525] border-l-2 border-[#00F0FF] transition-all">
+        <div class="relative">
+          <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-[#0F2035] to-[#162C4A] border border-[#1C3B63] flex items-center justify-center font-bold text-[#00F0FF]">
+            <i data-lucide="radio" class="w-5 h-5"></i>
+          </div>
+          <span class="absolute bottom-0 right-0 w-3 h-3 bg-emerald-400 rounded-full border-2 border-[#070A11]"></span>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex justify-between items-baseline mb-1">
+            <h2 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+              Global Relay
+              <span class="text-[9px] px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 font-mono">LIVE</span>
+            </h2>
+            <span class="text-[10px] text-gray-500 font-mono">NOW</span>
+          </div>
+          <p id="sidebar-preview" class="text-xs text-gray-400 truncate">Connected to encrypted mesh...</p>
+        </div>
+      </div>
+
+      <!-- Dummy Demo Contacts (Futuristic WhatsApp Vibe) -->
+      <div class="p-4 flex gap-3 cursor-pointer hover:bg-white/[0.02] opacity-75 transition-all">
+        <div class="w-12 h-12 rounded-xl bg-[#0D1322] border border-[#17233D] flex items-center justify-center font-bold text-gray-400">
+          VG
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex justify-between items-baseline mb-1">
+            <h2 class="text-xs font-semibold text-gray-300">Vanguard Node</h2>
+            <span class="text-[10px] text-gray-500 font-mono">10:42 PM</span>
+          </div>
+          <p class="text-xs text-gray-500 truncate">Identity safety verified: 51203 99201</p>
+        </div>
+      </div>
+
+      <div class="p-4 flex gap-3 cursor-pointer hover:bg-white/[0.02] opacity-60 transition-all">
+        <div class="w-12 h-12 rounded-xl bg-[#0D1322] border border-[#17233D] flex items-center justify-center font-bold text-gray-400">
+          CP
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex justify-between items-baseline mb-1">
+            <h2 class="text-xs font-semibold text-gray-300">Cipher Protocol</h2>
+            <span class="text-[10px] text-gray-500 font-mono">Yesterday</span>
+          </div>
+          <p class="text-xs text-gray-500 truncate">Voice transmission received (0:34)</p>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CHAT DISPLAY AREA -->
+  <main class="flex-1 flex flex-col bg-[#05070B] relative">
+    <!-- Chat Header -->
+    <header class="h-16 px-6 glass-panel border-b border-[#101725] flex items-center justify-between z-10">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-950 to-blue-950 border border-cyan-500/30 flex items-center justify-center text-cyan-400 font-bold">
+          <i data-lucide="terminal" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h2 class="text-sm font-bold text-white flex items-center gap-2">
+            Global Relay Room
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-mono">E2EE ACTIVE</span>
+          </h2>
+          <p class="text-[10px] text-emerald-400 font-mono flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+            ALLIENTIC MESH // SECURE TUNNEL
+          </p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button class="p-2.5 rounded-xl border border-[#141E30] hover:border-cyan-500/40 text-gray-400 hover:text-white transition-all">
+          <i data-lucide="phone" class="w-4 h-4"></i>
+        </button>
+        <button class="p-2.5 rounded-xl border border-[#141E30] hover:border-cyan-500/40 text-gray-400 hover:text-white transition-all">
+          <i data-lucide="video" class="w-4 h-4"></i>
+        </button>
+        <button class="p-2.5 rounded-xl border border-[#141E30] hover:border-cyan-500/40 text-gray-400 hover:text-cyan-400 transition-all">
+          <i data-lucide="shield-alert" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Message Feed -->
+    <section id="chat-box" class="flex-1 overflow-y-auto p-6 space-y-4">
+      <div class="flex justify-center my-2">
+        <span class="px-3 py-1 rounded-full border border-cyan-500/20 bg-cyan-500/5 text-[11px] text-cyan-400 font-mono flex items-center gap-1.5">
+          <i data-lucide="lock" class="w-3 h-3"></i> Zero-Knowledge Encryption • Messages routed through socket tunnel
+        </span>
+      </div>
+    </section>
+
+    <!-- Typing Indicator -->
+    <div id="typing-indicator" class="px-6 text-[11px] text-cyan-400 font-mono italic h-5"></div>
+
+    <!-- Message Input Bar -->
+    <footer class="p-4 glass-panel border-t border-[#101725]">
+      <form id="chat-form" class="flex items-center gap-3 max-w-5xl mx-auto">
+        <button type="button" class="p-3 text-gray-400 hover:text-white rounded-xl border border-[#141E30] hover:border-cyan-500/40 transition-all">
+          <i data-lucide="paperclip" class="w-4 h-4"></i>
+        </button>
+
+        <input 
+          id="msg-input" 
+          type="text" 
+          placeholder="Transmit encrypted packet..." 
+          autocomplete="off" 
+          class="flex-1 bg-[#090E18] border border-[#162135] focus:border-cyan-400/60 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none transition-all"
+        >
+
+        <button type="button" class="p-3 text-gray-400 hover:text-white rounded-xl border border-[#141E30] hover:border-cyan-500/40 transition-all">
+          <i data-lucide="mic" class="w-4 h-4"></i>
+        </button>
+
+        <button 
+          type="submit" 
+          class="p-3 bg-[#00F0FF] hover:bg-[#38F3FF] text-black font-bold rounded-xl transition-all shadow-[0_0_15px_rgba(0,240,255,0.3)] hover:scale-105"
+        >
+          <i data-lucide="send" class="w-4 h-4"></i>
+        </button>
+      </form>
+    </footer>
+  </main>
 
   <script>
+    lucide.createIcons();
     const socket = io();
     const chatBox = document.getElementById('chat-box');
     const form = document.getElementById('chat-form');
     const msgInput = document.getElementById('msg-input');
     const userInput = document.getElementById('user-input');
+    const avatarBadge = document.getElementById('user-avatar');
+    const sidebarPreview = document.getElementById('sidebar-preview');
+
+    userInput.addEventListener('input', () => {
+      const name = userInput.value.trim() || 'OP';
+      avatarBadge.textContent = name.substring(0, 2).toUpperCase();
+    });
 
     function renderMessage(data) {
-      const isMe = data.sender === userInput.value.trim();
-      const div = document.createElement('div');
-      div.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'}`;
-      div.innerHTML = `
-        <div class="max-w-[80%] rounded-lg p-3 text-xs ${isMe ? 'bg-cyan-950 border border-cyan-500 text-cyan-100' : 'bg-gray-900 border border-gray-800 text-gray-200'}">
-          <div class="text-[10px] text-gray-400 mb-1 flex justify-between gap-4 font-bold">
-            <span>${data.sender}</span><span>${data.time}</span>
+      const currentSender = userInput.value.trim() || 'Operative';
+      const isMe = data.sender.toLowerCase() === currentSender.toLowerCase();
+      
+      const wrap = document.createElement('div');
+      wrap.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'} transition-all`;
+      
+      wrap.innerHTML = `
+        <div class="max-w-[75%] rounded-2xl p-4 text-xs relative border ${
+          isMe 
+            ? 'bg-[#091524] border-cyan-500/30 text-white rounded-br-none shadow-[0_4px_20px_rgba(0,240,255,0.06)]' 
+            : 'bg-[#0B101C] border-[#182338] text-gray-200 rounded-bl-none'
+        }">
+          <div class="flex items-center justify-between gap-4 mb-1.5">
+            <span class="font-bold text-[11px] ${isMe ? 'text-cyan-400' : 'text-purple-400'}">${data.sender}</span>
+            <span class="text-[10px] text-gray-500 font-mono">${data.time}</span>
           </div>
-          <p>${data.text}</p>
+          <p class="leading-relaxed whitespace-pre-wrap text-sm">${data.text}</p>
+          <div class="mt-2 flex items-center justify-end gap-1 text-[10px] text-gray-500">
+            ${isMe ? '<span class="text-cyan-400 font-mono">✓✓</span>' : ''}
+          </div>
         </div>
       `;
-      chatBox.appendChild(div);
+
+      chatBox.appendChild(wrap);
       chatBox.scrollTop = chatBox.scrollHeight;
+      sidebarPreview.textContent = `${data.sender}: ${data.text}`;
     }
 
-    socket.on('init_history', (history) => history.forEach(renderMessage));
-    socket.on('new_message', (data) => renderMessage(data));
+    socket.on('init_history', (history) => {
+      history.forEach(renderMessage);
+    });
+
+    socket.on('new_message', (data) => {
+      renderMessage(data);
+    });
 
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       const text = msgInput.value.trim();
-      const sender = userInput.value.trim() || 'User';
+      const sender = userInput.value.trim() || 'Operative';
       if (!text) return;
       socket.emit('send_message', { sender, text });
       msgInput.value = '';
