@@ -9,21 +9,13 @@
   <script src="/socket.io/socket.io.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
-    
     * { font-family: 'Plus Jakarta Sans', sans-serif; }
     .font-mono { font-family: 'JetBrains Mono', monospace; }
-    
     body { background-color: #05070B; color: #DCE5F2; }
-    .glass-panel { background: rgba(8, 12, 20, 0.75); backdrop-filter: blur(16px); border: 1px solid rgba(0, 240, 255, 0.12); }
-    .glass-card { background: rgba(13, 19, 32, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
+    .glass-panel { background: rgba(8, 12, 20, 0.85); backdrop-filter: blur(16px); border: 1px solid rgba(0, 240, 255, 0.12); }
     .neon-cyan { color: #00F0FF; text-shadow: 0 0 12px rgba(0, 240, 255, 0.4); }
-    .neon-glow-box { box-shadow: 0 0 20px rgba(0, 240, 255, 0.15); }
-    
-    /* Custom Scrollbar */
     ::-webkit-scrollbar { width: 5px; }
-    ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: rgba(0, 240, 255, 0.2); border-radius: 10px; }
-    ::-webkit-scrollbar-thumb:hover { background: rgba(0, 240, 255, 0.4); }
   </style>
 </head>
 <body class="h-screen w-screen flex overflow-hidden select-none">
@@ -35,31 +27,28 @@
         <i data-lucide="shield" class="w-5 h-5 text-black stroke-[2.5]"></i>
       </div>
       <div class="h-[1px] w-8 bg-[#151F32]"></div>
-      <button class="p-3 rounded-xl text-[#00F0FF] bg-[#00F0FF]/10 transition-all hover:scale-105">
+      <button class="p-3 rounded-xl text-[#00F0FF] bg-[#00F0FF]/10 hover:scale-105 transition-all">
         <i data-lucide="message-square" class="w-5 h-5"></i>
       </button>
-      <button class="p-3 rounded-xl text-gray-500 hover:text-gray-300 hover:bg-gray-800/40 transition-all">
-        <i data-lucide="users" class="w-5 h-5"></i>
-      </button>
-      <button class="p-3 rounded-xl text-gray-500 hover:text-gray-300 hover:bg-gray-800/40 transition-all">
+      <button onclick="startCall('voice')" class="p-3 rounded-xl text-gray-500 hover:text-cyan-400 hover:bg-white/5 transition-all" title="Start Call">
         <i data-lucide="phone" class="w-5 h-5"></i>
       </button>
     </div>
     <div class="flex flex-col items-center gap-4">
-      <div class="w-2.5 h-2.5 rounded-full bg-[#00F0FF] animate-pulse" title="Network Connected"></div>
-      <button class="p-3 rounded-xl text-gray-500 hover:text-gray-300">
+      <div id="conn-indicator" class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" title="Connected"></div>
+      <button onclick="alert('Allientic Vault v1.0.0 — E2EE Socket Session Active')" class="p-3 rounded-xl text-gray-500 hover:text-gray-300">
         <i data-lucide="settings" class="w-5 h-5"></i>
       </button>
     </div>
   </aside>
 
-  <!-- SIDEBAR: CHAT DIRECTORY -->
+  <!-- SIDEBAR: CHAT LIST -->
   <aside class="w-full md:w-80 lg:w-96 flex flex-col bg-[#070A11] border-r border-[#101725] z-10">
     <!-- Top Identity Card -->
     <div class="p-4 border-b border-[#101725] flex items-center justify-between">
       <div class="flex items-center gap-3">
         <div class="relative">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-purple-500/20 border border-cyan-500/30 flex items-center justify-center font-bold text-white text-sm" id="user-avatar">
+          <div id="user-avatar" class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-purple-500/20 border border-cyan-500/30 flex items-center justify-center font-bold text-white text-sm">
             OP
           </div>
           <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-[#070A11]"></span>
@@ -69,33 +58,26 @@
             <input id="user-input" type="text" value="Operative" class="bg-transparent text-sm font-bold text-white border-b border-transparent hover:border-cyan-500/50 focus:border-cyan-500 outline-none w-24">
             <i data-lucide="edit-3" class="w-3 h-3 text-gray-500"></i>
           </div>
-          <span class="text-[10px] text-gray-400 font-mono tracking-wider">ALLIENTIC // NODE</span>
+          <span class="text-[10px] text-gray-400 font-mono tracking-wider">SECURE NODE</span>
         </div>
       </div>
-      <div class="flex items-center gap-1">
-        <button class="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-all">
-          <i data-lucide="plus-circle" class="w-4 h-4"></i>
-        </button>
-      </div>
+      <button onclick="clearCurrentChat()" class="text-[11px] text-gray-500 hover:text-cyan-400 font-mono" title="Clear messages">CLEAR</button>
     </div>
 
     <!-- Search Input -->
     <div class="p-3 border-b border-[#101725]">
       <div class="relative">
         <i data-lucide="search" class="w-4 h-4 text-gray-500 absolute left-3 top-2.5"></i>
-        <input type="text" placeholder="Search conversations or ciphers..." class="w-full bg-[#0B0F19] border border-[#162135] rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50">
+        <input type="text" placeholder="Search chats..." class="w-full bg-[#0B0F19] border border-[#162135] rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50">
       </div>
     </div>
 
     <!-- Conversations Feed -->
-    <div class="flex-1 overflow-y-auto divide-y divide-[#0D1424]">
-      <!-- Active Live Room -->
-      <div class="p-4 flex gap-3 cursor-pointer bg-[#0D1525] border-l-2 border-[#00F0FF] transition-all">
-        <div class="relative">
-          <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-[#0F2035] to-[#162C4A] border border-[#1C3B63] flex items-center justify-center font-bold text-[#00F0FF]">
-            <i data-lucide="radio" class="w-5 h-5"></i>
-          </div>
-          <span class="absolute bottom-0 right-0 w-3 h-3 bg-emerald-400 rounded-full border-2 border-[#070A11]"></span>
+    <div id="chat-list" class="flex-1 overflow-y-auto divide-y divide-[#0D1424]">
+      <!-- Chat 1 -->
+      <div onclick="selectChat('global')" id="chat-tab-global" class="p-4 flex gap-3 cursor-pointer bg-[#0D1525] border-l-2 border-[#00F0FF] transition-all">
+        <div class="w-12 h-12 rounded-xl bg-[#0F2035] border border-[#1C3B63] flex items-center justify-center font-bold text-[#00F0FF]">
+          <i data-lucide="radio" class="w-5 h-5"></i>
         </div>
         <div class="flex-1 min-w-0">
           <div class="flex justify-between items-baseline mb-1">
@@ -105,26 +87,27 @@
             </h2>
             <span class="text-[10px] text-gray-500 font-mono">NOW</span>
           </div>
-          <p id="sidebar-preview" class="text-xs text-gray-400 truncate">Connected to encrypted mesh...</p>
+          <p id="preview-global" class="text-xs text-gray-400 truncate">Connected to encrypted mesh...</p>
         </div>
       </div>
 
-      <!-- Dummy Demo Contacts (Futuristic WhatsApp Vibe) -->
-      <div class="p-4 flex gap-3 cursor-pointer hover:bg-white/[0.02] opacity-75 transition-all">
-        <div class="w-12 h-12 rounded-xl bg-[#0D1322] border border-[#17233D] flex items-center justify-center font-bold text-gray-400">
+      <!-- Chat 2 -->
+      <div onclick="selectChat('vanguard')" id="chat-tab-vanguard" class="p-4 flex gap-3 cursor-pointer hover:bg-white/[0.03] transition-all">
+        <div class="w-12 h-12 rounded-xl bg-[#0D1322] border border-[#17233D] flex items-center justify-center font-bold text-gray-300">
           VG
         </div>
         <div class="flex-1 min-w-0">
           <div class="flex justify-between items-baseline mb-1">
-            <h2 class="text-xs font-semibold text-gray-300">Vanguard Node</h2>
+            <h2 class="text-xs font-semibold text-gray-300">Vanguard AI Core</h2>
             <span class="text-[10px] text-gray-500 font-mono">10:42 PM</span>
           </div>
-          <p class="text-xs text-gray-500 truncate">Identity safety verified: 51203 99201</p>
+          <p id="preview-vanguard" class="text-xs text-gray-500 truncate">Online. Ready for instructions.</p>
         </div>
       </div>
 
-      <div class="p-4 flex gap-3 cursor-pointer hover:bg-white/[0.02] opacity-60 transition-all">
-        <div class="w-12 h-12 rounded-xl bg-[#0D1322] border border-[#17233D] flex items-center justify-center font-bold text-gray-400">
+      <!-- Chat 3 -->
+      <div onclick="selectChat('cipher')" id="chat-tab-cipher" class="p-4 flex gap-3 cursor-pointer hover:bg-white/[0.03] transition-all">
+        <div class="w-12 h-12 rounded-xl bg-[#0D1322] border border-[#17233D] flex items-center justify-center font-bold text-gray-300">
           CP
         </div>
         <div class="flex-1 min-w-0">
@@ -132,61 +115,52 @@
             <h2 class="text-xs font-semibold text-gray-300">Cipher Protocol</h2>
             <span class="text-[10px] text-gray-500 font-mono">Yesterday</span>
           </div>
-          <p class="text-xs text-gray-500 truncate">Voice transmission received (0:34)</p>
+          <p id="preview-cipher" class="text-xs text-gray-500 truncate">Encrypted node standby.</p>
         </div>
       </div>
     </div>
   </aside>
 
-  <!-- MAIN CHAT DISPLAY AREA -->
+  <!-- MAIN CHAT PANEL -->
   <main class="flex-1 flex flex-col bg-[#05070B] relative">
-    <!-- Chat Header -->
+    <!-- Header -->
     <header class="h-16 px-6 glass-panel border-b border-[#101725] flex items-center justify-between z-10">
       <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-950 to-blue-950 border border-cyan-500/30 flex items-center justify-center text-cyan-400 font-bold">
-          <i data-lucide="terminal" class="w-5 h-5"></i>
+        <div id="current-chat-icon" class="w-10 h-10 rounded-xl bg-cyan-950 border border-cyan-500/30 flex items-center justify-center text-cyan-400 font-bold">
+          <i data-lucide="radio" class="w-5 h-5"></i>
         </div>
         <div>
-          <h2 class="text-sm font-bold text-white flex items-center gap-2">
+          <h2 id="current-chat-title" class="text-sm font-bold text-white flex items-center gap-2">
             Global Relay Room
             <span class="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-mono">E2EE ACTIVE</span>
           </h2>
-          <p class="text-[10px] text-emerald-400 font-mono flex items-center gap-1.5">
+          <p id="current-chat-sub" class="text-[10px] text-emerald-400 font-mono flex items-center gap-1.5">
             <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
-            ALLIENTIC MESH // SECURE TUNNEL
+            CONNECTED VIA WEBSOCKET
           </p>
         </div>
       </div>
 
       <div class="flex items-center gap-2">
-        <button class="p-2.5 rounded-xl border border-[#141E30] hover:border-cyan-500/40 text-gray-400 hover:text-white transition-all">
+        <button onclick="startCall('voice')" class="p-2.5 rounded-xl border border-[#141E30] hover:border-cyan-500/40 text-gray-400 hover:text-white transition-all" title="Voice Call">
           <i data-lucide="phone" class="w-4 h-4"></i>
         </button>
-        <button class="p-2.5 rounded-xl border border-[#141E30] hover:border-cyan-500/40 text-gray-400 hover:text-white transition-all">
+        <button onclick="startCall('video')" class="p-2.5 rounded-xl border border-[#141E30] hover:border-cyan-500/40 text-gray-400 hover:text-white transition-all" title="Video Call">
           <i data-lucide="video" class="w-4 h-4"></i>
-        </button>
-        <button class="p-2.5 rounded-xl border border-[#141E30] hover:border-cyan-500/40 text-gray-400 hover:text-cyan-400 transition-all">
-          <i data-lucide="shield-alert" class="w-4 h-4"></i>
         </button>
       </div>
     </header>
 
-    <!-- Message Feed -->
-    <section id="chat-box" class="flex-1 overflow-y-auto p-6 space-y-4">
-      <div class="flex justify-center my-2">
-        <span class="px-3 py-1 rounded-full border border-cyan-500/20 bg-cyan-500/5 text-[11px] text-cyan-400 font-mono flex items-center gap-1.5">
-          <i data-lucide="lock" class="w-3 h-3"></i> Zero-Knowledge Encryption • Messages routed through socket tunnel
-        </span>
-      </div>
-    </section>
+    <!-- Message Stream -->
+    <section id="chat-box" class="flex-1 overflow-y-auto p-6 space-y-4"></section>
 
     <!-- Typing Indicator -->
     <div id="typing-indicator" class="px-6 text-[11px] text-cyan-400 font-mono italic h-5"></div>
 
-    <!-- Message Input Bar -->
+    <!-- Message Composer -->
     <footer class="p-4 glass-panel border-t border-[#101725]">
       <form id="chat-form" class="flex items-center gap-3 max-w-5xl mx-auto">
-        <button type="button" class="p-3 text-gray-400 hover:text-white rounded-xl border border-[#141E30] hover:border-cyan-500/40 transition-all">
+        <button type="button" onclick="sendAttachment()" class="p-3 text-gray-400 hover:text-cyan-400 rounded-xl border border-[#141E30] hover:border-cyan-500/40 transition-all" title="Attach encrypted document">
           <i data-lucide="paperclip" class="w-4 h-4"></i>
         </button>
 
@@ -198,7 +172,7 @@
           class="flex-1 bg-[#090E18] border border-[#162135] focus:border-cyan-400/60 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none transition-all"
         >
 
-        <button type="button" class="p-3 text-gray-400 hover:text-white rounded-xl border border-[#141E30] hover:border-cyan-500/40 transition-all">
+        <button type="button" onclick="sendVoiceNote()" class="p-3 text-gray-400 hover:text-cyan-400 rounded-xl border border-[#141E30] hover:border-cyan-500/40 transition-all" title="Record Voice Note">
           <i data-lucide="mic" class="w-4 h-4"></i>
         </button>
 
@@ -212,66 +186,239 @@
     </footer>
   </main>
 
+  <!-- WEBRTC CALL SIMULATOR MODAL -->
+  <div id="call-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 hidden">
+    <div class="glass-panel p-8 rounded-3xl w-80 max-w-sm flex flex-col items-center text-center border border-cyan-500/30 shadow-[0_0_50px_rgba(0,240,255,0.2)]">
+      <div class="w-20 h-20 rounded-2xl bg-cyan-950 border-2 border-cyan-400 flex items-center justify-center text-cyan-400 mb-4 animate-pulse">
+        <i id="call-type-icon" data-lucide="phone" class="w-8 h-8"></i>
+      </div>
+      <h3 id="call-user-title" class="text-lg font-bold text-white mb-1">Vanguard Node</h3>
+      <p id="call-status" class="text-xs text-cyan-400 font-mono mb-6">ESTABLISHING SRTP TUNNEL...</p>
+      
+      <div class="flex items-center gap-4">
+        <button onclick="toggleCallMute(this)" class="p-4 rounded-2xl bg-[#0F1624] text-gray-300 hover:text-white border border-gray-700">
+          <i data-lucide="mic" class="w-5 h-5"></i>
+        </button>
+        <button onclick="endCall()" class="p-4 rounded-2xl bg-red-600 hover:bg-red-500 text-white shadow-[0_0_20px_rgba(239,68,68,0.4)]">
+          <i data-lucide="phone-off" class="w-5 h-5"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>
     lucide.createIcons();
-    const socket = io();
+
+    // Sockets & State
+    let socket;
+    try {
+      socket = io();
+      socket.on('connect', () => {
+        document.getElementById('conn-indicator').className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse';
+      });
+      socket.on('disconnect', () => {
+        document.getElementById('conn-indicator').className = 'w-2.5 h-2.5 rounded-full bg-red-500';
+      });
+    } catch(e) {
+      console.warn("Socket.io offline - running in standalone mode");
+    }
+
+    let currentChat = 'global';
+    const chatsData = {
+      global: [
+        { sender: 'System', text: 'Secure Global Relay established. Messages sync in real-time.', time: '10:00 PM', isSystem: true }
+      ],
+      vanguard: [
+        { sender: 'Vanguard AI', text: 'Hello! I am Vanguard, your simulated neural contact. Send me any message to test the chat pipeline.', time: '10:40 PM', isSystem: false }
+      ],
+      cipher: [
+        { sender: 'Cipher Protocol', text: 'Node encrypted with P-256. Standby mode active.', time: 'Yesterday', isSystem: false }
+      ]
+    };
+
     const chatBox = document.getElementById('chat-box');
     const form = document.getElementById('chat-form');
     const msgInput = document.getElementById('msg-input');
     const userInput = document.getElementById('user-input');
-    const avatarBadge = document.getElementById('user-avatar');
-    const sidebarPreview = document.getElementById('sidebar-preview');
+    const typingIndicator = document.getElementById('typing-indicator');
 
-    userInput.addEventListener('input', () => {
-      const name = userInput.value.trim() || 'OP';
-      avatarBadge.textContent = name.substring(0, 2).toUpperCase();
-    });
+    function renderAllMessages() {
+      chatBox.innerHTML = '';
+      chatsData[currentChat].forEach(renderMessage);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
 
     function renderMessage(data) {
-      const currentSender = userInput.value.trim() || 'Operative';
-      const isMe = data.sender.toLowerCase() === currentSender.toLowerCase();
+      const myName = userInput.value.trim() || 'Operative';
+      const isMe = data.sender.toLowerCase() === myName.toLowerCase();
       
       const wrap = document.createElement('div');
-      wrap.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'} transition-all`;
-      
-      wrap.innerHTML = `
-        <div class="max-w-[75%] rounded-2xl p-4 text-xs relative border ${
-          isMe 
-            ? 'bg-[#091524] border-cyan-500/30 text-white rounded-br-none shadow-[0_4px_20px_rgba(0,240,255,0.06)]' 
-            : 'bg-[#0B101C] border-[#182338] text-gray-200 rounded-bl-none'
-        }">
-          <div class="flex items-center justify-between gap-4 mb-1.5">
-            <span class="font-bold text-[11px] ${isMe ? 'text-cyan-400' : 'text-purple-400'}">${data.sender}</span>
-            <span class="text-[10px] text-gray-500 font-mono">${data.time}</span>
+      wrap.className = `flex flex-col ${data.isSystem ? 'items-center my-2' : isMe ? 'items-end' : 'items-start'}`;
+
+      if (data.isSystem) {
+        wrap.innerHTML = `<span class="px-3 py-1 rounded-full border border-cyan-500/20 bg-cyan-500/5 text-[11px] text-cyan-400 font-mono">${data.text}</span>`;
+      } else {
+        wrap.innerHTML = `
+          <div class="max-w-[75%] rounded-2xl p-4 text-xs relative border ${
+            isMe 
+              ? 'bg-[#091524] border-cyan-500/30 text-white rounded-br-none shadow-[0_4px_20px_rgba(0,240,255,0.06)]' 
+              : 'bg-[#0B101C] border-[#182338] text-gray-200 rounded-bl-none'
+          }">
+            <div class="flex items-center justify-between gap-4 mb-1.5">
+              <span class="font-bold text-[11px] ${isMe ? 'text-cyan-400' : 'text-purple-400'}">${data.sender}</span>
+              <span class="text-[10px] text-gray-500 font-mono">${data.time}</span>
+            </div>
+            <p class="leading-relaxed whitespace-pre-wrap text-sm">${data.text}</p>
+            <div class="mt-2 flex items-center justify-end gap-1 text-[10px] text-gray-500">
+              ${isMe ? '<span class="text-cyan-400 font-mono">✓✓</span>' : ''}
+            </div>
           </div>
-          <p class="leading-relaxed whitespace-pre-wrap text-sm">${data.text}</p>
-          <div class="mt-2 flex items-center justify-end gap-1 text-[10px] text-gray-500">
-            ${isMe ? '<span class="text-cyan-400 font-mono">✓✓</span>' : ''}
-          </div>
-        </div>
-      `;
+        `;
+      }
 
       chatBox.appendChild(wrap);
       chatBox.scrollTop = chatBox.scrollHeight;
-      sidebarPreview.textContent = `${data.sender}: ${data.text}`;
+      lucide.createIcons();
     }
 
-    socket.on('init_history', (history) => {
-      history.forEach(renderMessage);
-    });
+    // Switch between conversations
+    function selectChat(chatId) {
+      currentChat = chatId;
+      document.querySelectorAll('#chat-list > div').forEach(el => {
+        el.classList.remove('bg-[#0D1525]', 'border-l-2', 'border-[#00F0FF]');
+        el.classList.add('hover:bg-white/[0.03]');
+      });
+      const tab = document.getElementById(`chat-tab-${chatId}`);
+      if (tab) {
+        tab.classList.add('bg-[#0D1525]', 'border-l-2', 'border-[#00F0FF]');
+      }
 
-    socket.on('new_message', (data) => {
-      renderMessage(data);
-    });
+      const titleEl = document.getElementById('current-chat-title');
+      if (chatId === 'global') titleEl.innerHTML = 'Global Relay Room <span class="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-mono">E2EE ACTIVE</span>';
+      if (chatId === 'vanguard') titleEl.innerHTML = 'Vanguard AI Core <span class="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20 font-mono">NEURAL</span>';
+      if (chatId === 'cipher') titleEl.innerHTML = 'Cipher Protocol <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">STANDBY</span>';
 
+      renderAllMessages();
+    }
+
+    // Handle incoming messages from Socket.io (if other tabs/devices are online)
+    if (socket) {
+      socket.on('new_message', (data) => {
+        if (!chatsData.global.some(m => m.id === data.id)) {
+          chatsData.global.push(data);
+          if (currentChat === 'global') renderMessage(data);
+          document.getElementById('preview-global').textContent = `${data.sender}: ${data.text}`;
+        }
+      });
+    }
+
+    // Send Form
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       const text = msgInput.value.trim();
       const sender = userInput.value.trim() || 'Operative';
       if (!text) return;
-      socket.emit('send_message', { sender, text });
+
+      const packet = {
+        id: Date.now().toString(),
+        sender,
+        text,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+
+      chatsData[currentChat].push(packet);
+      renderMessage(packet);
       msgInput.value = '';
+
+      // Broadcast to socket if global chat
+      if (socket && currentChat === 'global') {
+        socket.emit('send_message', packet);
+      }
+
+      // Automated Bot response so user is never alone
+      triggerBotReply(text);
     });
+
+    function triggerBotReply(userPrompt) {
+      typingIndicator.textContent = `${currentChat === 'vanguard' ? 'Vanguard' : 'Relay Bot'} is decrypting response...`;
+      
+      setTimeout(() => {
+        typingIndicator.textContent = '';
+        const replies = [
+          `Telemetry packet verified: "${userPrompt}". Cipher ratchet rotated successfully.`,
+          `Signal received and logged to local storage vault. Latency: 18ms.`,
+          `All systems green. Message acknowledged by node mesh.`
+        ];
+        const randomReply = replies[Math.floor(Math.random() * replies.length)];
+        
+        const botPacket = {
+          id: Date.now().toString(),
+          sender: currentChat === 'vanguard' ? 'Vanguard AI' : 'Relay Node',
+          text: randomReply,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        };
+        chatsData[currentChat].push(botPacket);
+        renderMessage(botPacket);
+      }, 1200);
+    }
+
+    function sendVoiceNote() {
+      const packet = {
+        id: Date.now().toString(),
+        sender: userInput.value.trim() || 'Operative',
+        text: '🎙️ [Encrypted Voice Note: 0:14] ılılllıılllıl',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      chatsData[currentChat].push(packet);
+      renderMessage(packet);
+    }
+
+    function sendAttachment() {
+      const packet = {
+        id: Date.now().toString(),
+        sender: userInput.value.trim() || 'Operative',
+        text: '📎 [Encrypted Payload: payload_vault_key.bin (42.8 KB)]',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      chatsData[currentChat].push(packet);
+      renderMessage(packet);
+    }
+
+    function clearCurrentChat() {
+      chatsData[currentChat] = [];
+      renderAllMessages();
+    }
+
+    // Call Simulation
+    let callTimer;
+    function startCall(type) {
+      const modal = document.getElementById('call-modal');
+      const status = document.getElementById('call-status');
+      modal.classList.remove('hidden');
+      status.textContent = 'CONNECTING ENCRYPTED SRTP TUNNEL...';
+      
+      let seconds = 0;
+      setTimeout(() => {
+        callTimer = setInterval(() => {
+          seconds++;
+          const mins = String(Math.floor(seconds / 60)).padStart(2, '0');
+          const secs = String(seconds % 60).padStart(2, '0');
+          status.textContent = `CONNECTED (${mins}:${secs})`;
+        }, 1000);
+      }, 1500);
+    }
+
+    function endCall() {
+      clearInterval(callTimer);
+      document.getElementById('call-modal').classList.add('hidden');
+    }
+
+    function toggleCallMute(btn) {
+      btn.classList.toggle('text-red-400');
+    }
+
+    // Initialize
+    renderAllMessages();
   </script>
 </body>
 </html>
